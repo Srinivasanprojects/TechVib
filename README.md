@@ -1,269 +1,594 @@
-# TechVib - Expo Notifications with FCM (Dev Build)
+# TechVib - Social Media App with AI Chat Assistant
 
-This is an Expo managed workflow project with Firebase Cloud Messaging (FCM) integration for push notifications. **This project uses Expo Dev Client (development build) which is required for FCM to work properly.**
+A React Native social media application built with Expo that displays user posts from a GraphQL API and features an AI-powered chat assistant using Google's Gemini API.
 
-## ⚠️ Important: Dev Build Required
+## 📱 Features
 
-**FCM requires a development build** - Expo Go does NOT support custom native modules like FCM. You must build and install a custom development client on your device.
+- ✅ **User Posts Feed**: Displays posts from GraphQL API (GraphQLZero) in a scrollable FlatList
+- ✅ **Push Notifications**: Expo notifications with FCM integration
+- ✅ **Draggable AI Chat Bot**: Interactive circular bot that can be dragged around the screen
+- ✅ **AI Chat Assistant**: Chat interface powered by Google Gemini API
+- ✅ **Conversation Persistence**: Chat history saved and restored using AsyncStorage
+- ✅ **Pull to Refresh**: Refresh posts feed by pulling down
+- ✅ **Modern UI**: Clean, card-based design with smooth animations
 
-## Features
+## 📦 Package Dependencies & Functions
 
-- ✅ Expo managed workflow with Dev Client
-- ✅ Push notifications with expo-notifications
-- ✅ FCM integration for Android
-- ✅ Notification display UI
-- ✅ Test notification functionality
-- ✅ Real-time notification logging
+### Core Dependencies
 
-## Prerequisites
+| Package | Version | Purpose | Key Functions |
+|---------|---------|---------|---------------|
+| `expo` | ~54.0.22 | Expo framework | React Native app development |
+| `react-native` | 0.81.5 | React Native core | Native UI components |
+| `react` | 19.1.0 | React library | UI component framework |
+| `expo-notifications` | ~0.32.12 | Push notifications | `registerForPushNotificationsAsync()`, `scheduleLocalNotification()` |
+| `@react-native-async-storage/async-storage` | ^2.2.0 | Local storage | `getItem()`, `setItem()`, `removeItem()` - Persist chat history |
+| `react-native-gesture-handler` | ^2.29.1 | Gesture handling | `PanResponder` - Enable drag functionality for bot |
+| `expo-dev-client` | ~6.0.17 | Development client | Custom native builds for FCM |
+
+### Package Functions Breakdown
+
+#### 1. **expo-notifications**
+- `registerForPushNotificationsAsync()`: Requests notification permissions and returns Expo push token
+- `addNotificationReceivedListener()`: Listens for notifications received in foreground
+- `addNotificationResponseReceivedListener()`: Listens for user taps on notifications
+- `scheduleLocalNotification()`: Sends local test notifications
+
+#### 2. **@react-native-async-storage/async-storage**
+- `setItem(key, value)`: Saves chat history as JSON string
+- `getItem(key)`: Retrieves saved chat history
+- `removeItem(key)`: Clears chat history
+
+#### 3. **react-native-gesture-handler**
+- `PanResponder`: Handles drag gestures for the draggable bot
+  - `onPanResponderGrant`: Called when drag starts
+  - `onPanResponderMove`: Called during drag movement
+  - `onPanResponderRelease`: Called when drag ends
+
+## 🏗️ Project Structure
+
+```
+techVib/
+├── src/
+│   ├── components/              # Reusable UI components
+│   │   ├── PostCard.js         # Individual post card component
+│   │   ├── EmptyState.js       # Loading/error/empty states
+│   │   ├── NotificationButton.js # Notification send button
+│   │   ├── DraggableBot.js     # Draggable chat bot button
+│   │   ├── ChatModal.js        # Chat interface modal
+│   │   └── index.js            # Component exports
+│   │
+│   ├── screens/                 # Screen components
+│   │   └── HomeScreen.js       # Main home screen with posts feed
+│   │
+│   ├── services/                # API and business logic
+│   │   ├── api.js              # GraphQL API service (posts)
+│   │   ├── geminiService.js    # Gemini AI API service
+│   │   ├── chatStorage.js      # AsyncStorage wrapper for chat
+│   │   └── notificationService.js # Notification service
+│   │
+│   └── constants/               # App constants
+│       ├── api.js              # GraphQL endpoint and queries
+│       ├── colors.js           # Color theme constants
+│       ├── gemini.js           # Gemini API configuration
+│       └── index.js            # Constants exports
+│
+├── assets/                      # Static assets (icons, images)
+├── App.js                       # Root component
+├── index.js                     # Entry point
+├── app.json                     # Expo configuration
+├── eas.json                     # EAS Build configuration
+├── package.json                 # Dependencies and scripts
+└── README.md                    # This file
+```
+
+## 🔄 Project Flow
+
+### Application Initialization Flow
+
+```
+1. index.js
+   └─> Imports react-native-gesture-handler
+   └─> Registers App component as root
+
+2. App.js
+   └─> Renders HomeScreen component
+
+3. HomeScreen.js (Main Screen)
+   ├─> useEffect (on mount):
+   │   ├─> loadPosts() - Fetches posts from GraphQL API
+   │   ├─> registerForPushNotificationsAsync() - Sets up notifications
+   │   ├─> addNotificationReceivedListener() - Listens for notifications
+   │   └─> addNotificationResponseReceivedListener() - Listens for taps
+   │
+   ├─> Renders:
+   │   ├─> Header (Title)
+   │   ├─> FlatList (Posts feed)
+   │   ├─> NotificationButton (Bottom fixed)
+   │   ├─> DraggableBot (Floating)
+   │   └─> ChatModal (Conditional)
+   │
+   └─> State Management:
+       ├─> posts: Array of post objects
+       ├─> loading: Boolean for loading state
+       ├─> error: Error message string
+       ├─> chatModalVisible: Boolean for modal visibility
+       └─> notifications: Array of received notifications
+```
+
+### Posts Feed Flow
+
+```
+User Action: App Opens
+    │
+    ▼
+HomeScreen mounts
+    │
+    ▼
+loadPosts() called
+    │
+    ▼
+fetchPosts() from services/api.js
+    │
+    ├─> POST request to GraphQLZero API
+    │   ├─> Endpoint: https://graphqlzero.almansi.me/api
+    │   └─> Query: GET_POSTS_QUERY (posts with user info)
+    │
+    ▼
+Response received
+    │
+    ├─> Success: setPosts(result.data.posts.data)
+    └─> Error: setError(error.message)
+    │
+    ▼
+FlatList renders PostCard for each post
+    │
+    └─> PostCard displays:
+        ├─> User name/email
+        ├─> Post title
+        └─> Post body
+```
+
+### Chat Feature Flow (Detailed)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CHAT FEATURE FLOW                            │
+└─────────────────────────────────────────────────────────────────┘
+
+1. INITIALIZATION (App Launch)
+   │
+   ├─> DraggableBot renders at bottom-right
+   │   └─> Uses PanResponder for drag gestures
+   │
+   └─> ChatModal hidden (chatModalVisible = false)
+
+2. USER INTERACTION - Open Chat
+   │
+   ├─> User taps DraggableBot
+   │   └─> setChatModalVisible(true)
+   │
+   └─> ChatModal opens
+       │
+       ├─> useEffect (when visible):
+       │   └─> loadHistory() called
+       │       │
+       │       └─> loadChatHistory() from services/chatStorage.js
+       │           │
+       │           ├─> AsyncStorage.getItem("@techvib_chat_history")
+       │           │
+       │           ├─> Parse JSON data
+       │           │
+       │           └─> setMessages(history) - Restore conversation
+       │
+       └─> Modal displays:
+           ├─> Header (Title, Clear button, Close button)
+           ├─> ScrollView (Message list)
+           │   ├─> User messages (right-aligned, primary color)
+           │   └─> Bot messages (left-aligned, gray background)
+           └─> Input area (TextInput + Send button)
+
+3. USER SENDS MESSAGE
+   │
+   ├─> User types message in TextInput
+   │
+   ├─> User taps "Send" button
+   │   └─> handleSend() called
+   │       │
+   │       ├─> Create user message object:
+   │       │   {
+   │       │     id: timestamp,
+   │       │     text: inputText,
+   │       │     role: "user",
+   │       │     timestamp: ISO string
+   │       │   }
+   │       │
+   │       ├─> Add to messages array immediately (optimistic update)
+   │       ├─> setInputText("") - Clear input
+   │       ├─> setLoading(true) - Show loading indicator
+   │       │
+   │       └─> Call sendMessageToGemini()
+   │           │
+   │           ├─> Convert messages to conversation history format:
+   │           │   [
+   │           │     { role: "user", parts: [{ text: "..." }] },
+   │           │     { role: "model", parts: [{ text: "..." }] },
+   │           │     ...
+   │           │   ]
+   │           │
+   │           ├─> Build API request:
+   │           │   POST https://generativelanguage.googleapis.com/...
+   │           │   Headers: { "Content-Type": "application/json" }
+   │           │   Body: {
+   │           │     contents: conversationHistory + new message
+   │           │   }
+   │           │
+   │           ├─> Send to Gemini API
+   │           │   └─> URL: GEMINI_API_URL + "?key=" + GEMINI_API_KEY
+   │           │
+   │           ├─> Parse response:
+   │           │   └─> Extract: data.candidates[0].content.parts[0].text
+   │           │
+   │           ├─> Create bot message object:
+   │           │   {
+   │           │     id: timestamp,
+   │           │     text: response,
+   │           │     role: "bot",
+   │           │     timestamp: ISO string
+   │           │   }
+   │           │
+   │           ├─> Add bot message to messages array
+   │           │
+   │           └─> Save to AsyncStorage:
+   │               └─> saveChatHistory(updatedMessages)
+   │                   │
+   │                   └─> AsyncStorage.setItem(
+   │                       "@techvib_chat_history",
+   │                       JSON.stringify(messages)
+   │                   )
+   │
+   └─> setLoading(false) - Hide loading indicator
+
+4. USER CLOSES CHAT
+   │
+   ├─> User taps close button (✕)
+   │   └─> setChatModalVisible(false)
+   │
+   └─> ChatModal closes
+       └─> Conversation state remains in AsyncStorage
+
+5. USER REOPENS CHAT
+   │
+   ├─> User taps DraggableBot again
+   │   └─> setChatModalVisible(true)
+   │
+   └─> loadHistory() runs again
+       └─> Previous conversation restored from AsyncStorage
+```
+
+### Draggable Bot Flow
+
+```
+DraggableBot Component
+    │
+    ├─> Initial Position:
+    │   └─> x: SCREEN_WIDTH - BOT_SIZE - 20
+    │   └─> y: SCREEN_HEIGHT - BOT_SIZE - 150
+    │
+    ├─> PanResponder Setup:
+    │   ├─> onPanResponderGrant: Sets offset when drag starts
+    │   ├─> onPanResponderMove: Updates pan.x and pan.y during drag
+    │   └─> onPanResponderRelease: Calculates final position
+    │       │
+    │       ├─> Calculate new position: position + gesture delta
+    │       │
+    │       ├─> Apply boundaries:
+    │       │   ├─> X: 10 to (SCREEN_WIDTH - BOT_SIZE - 10)
+    │       │   └─> Y: 100 to (SCREEN_HEIGHT - BOT_SIZE - 150)
+    │       │
+    │       └─> Update position state
+    │
+    └─> TouchableOpacity:
+        └─> onPress: Opens ChatModal
+```
+
+## 📡 API Services
+
+### 1. GraphQL API Service (`services/api.js`)
+
+**Function**: `fetchPosts()`
+
+**Purpose**: Fetches user posts from GraphQLZero API
+
+**Flow**:
+```
+fetchPosts()
+  └─> POST https://graphqlzero.almansi.me/api
+      Body: { query: GET_POSTS_QUERY }
+      └─> Returns: Array of posts with user information
+```
+
+**Query Structure**:
+```graphql
+query {
+  posts {
+    data {
+      id
+      title
+      body
+      user {
+        id
+        name
+        username
+        email
+      }
+    }
+  }
+}
+```
+
+### 2. Gemini API Service (`services/geminiService.js`)
+
+**Function**: `sendMessageToGemini(message, conversationHistory)`
+
+**Purpose**: Sends chat messages to Google Gemini API
+
+**Flow**:
+```
+sendMessageToGemini(message, history)
+  ├─> Build conversation context:
+  │   └─> Map history to Gemini format:
+  │       { role: "user"|"model", parts: [{ text: "..." }] }
+  │
+  ├─> Add new user message
+  │
+  └─> POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=API_KEY
+      Body: { contents: conversationHistory }
+      └─> Returns: Response text from AI
+```
+
+### 3. Chat Storage Service (`services/chatStorage.js`)
+
+**Functions**:
+- `saveChatHistory(messages)`: Saves messages to AsyncStorage
+- `loadChatHistory()`: Loads messages from AsyncStorage
+- `clearChatHistory()`: Removes all saved messages
+
+**Storage Key**: `@techvib_chat_history`
+
+**Format**: JSON stringified array of message objects
+
+## 🔧 Setup Instructions
+
+### Prerequisites
 
 - Node.js (v14 or higher)
-- EAS CLI (`npm install -g eas-cli`) - Already installed
+- Expo CLI (`npm install -g expo-cli`)
+- EAS CLI (`npm install -g eas-cli`)
 - Expo account (sign up at https://expo.dev)
-- Firebase project (for FCM)
-- Physical Android/iOS device (push notifications don't work on simulators)
+- Physical Android/iOS device (for push notifications)
 
-## Installation
+### Installation
 
-1. Install dependencies:
-
+1. **Install dependencies**:
 ```bash
 npm install
 ```
 
-2. Login to Expo:
+2. **Configure Gemini API**:
+   - Open `src/constants/gemini.js`
+   - Replace `YOUR_GEMINI_API_KEY_HERE` with your actual API key
+   - Get your API key from: https://makersuite.google.com/app/apikey
 
-```bash
-eas login
-```
+3. **Firebase Setup (for notifications)**:
+   - Create a Firebase project at https://console.firebase.google.com/
+   - Add Android app with package name: `com.techvib.app`
+   - Download `google-services.json` and place it in the root directory
 
-3. Configure EAS project (if not already done):
+### Running the App
 
-```bash
-eas build:configure
-```
-
-4. Add your `google-services.json` file:
-   - Download `google-services.json` from your Firebase Console
-   - Place it in the root directory of this project
-   - The app.json is already configured to use it
-
-## Firebase Setup
-
-### Step 1: Create a Firebase Project
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or select an existing one
-3. Enable Cloud Messaging API
-
-### Step 2: Add Android App to Firebase
-
-1. In Firebase Console, click "Add app" and select Android
-2. Enter your Android package name: `com.techvib.app` (from app.json)
-3. Download `google-services.json`
-4. Place it in the root directory of this project
-
-### Step 3: Get FCM Server Key
-
-1. In Firebase Console, go to Project Settings > Cloud Messaging
-2. Copy the Server Key (Legacy) - you'll need this to send notifications
-
-## Building and Running the Development Build
-
-### Step 1: Build Development Client
-
-**For Android:**
-
-```bash
-npm run build:dev:android
-# or
-eas build --profile development --platform android
-```
-
-**For iOS:**
-
-```bash
-npm run build:dev:ios
-# or
-eas build --profile development --platform ios
-```
-
-This will:
-
-- Build a custom development client with FCM support
-- Upload the build to EAS servers
-- Provide you with a download link or QR code
-
-### Step 2: Install Development Client
-
-1. **Android**: Download the APK from the build link and install it on your device
-   - Or scan the QR code with your Android device
-2. **iOS**: Install via TestFlight (if configured) or download directly
-   - Or scan the QR code with your iOS device
-
-### Step 3: Start Development Server
-
+1. **Start development server**:
 ```bash
 npm start
 # or
 expo start --dev-client
 ```
 
-This will start the Metro bundler with dev client support.
-
-### Step 4: Connect to Dev Client
-
-1. Open the **Expo Dev Client** app you just installed (not Expo Go)
-2. Scan the QR code or enter the URL manually
-3. The app will load and connect to the development server
-
-## Building for Production
-
-### Preview Build (for testing)
-
+2. **For development build** (required for notifications):
 ```bash
-npm run build:preview:android
-npm run build:preview:ios
+# Build development client
+npm run build:dev:android  # or build:dev:ios
+
+# Install on device, then connect to dev server
 ```
 
-### Production Build
+3. **For Expo Go** (limited features - no notifications):
+```bash
+# Scan QR code with Expo Go app
+# Note: Chat and notifications require dev build
+```
+
+## 🔐 API Configuration
+
+### Gemini API Setup
+
+1. **Get API Key**:
+   - Visit: https://makersuite.google.com/app/apikey
+   - Sign in with Google account
+   - Create new API key or use existing one
+
+2. **Configure**:
+   - Edit `src/constants/gemini.js`
+   - Set `GEMINI_API_KEY` to your API key
+   - Ensure `GEMINI_API_URL` points to correct model (currently `gemini-2.5-flash`)
+
+3. **Model Options**:
+   - `gemini-pro`: Standard model
+   - `gemini-2.5-flash`: Faster, lighter model (current)
+   - `gemini-1.5-pro`: Latest advanced model
+
+### GraphQL API
+
+- **Endpoint**: `https://graphqlzero.almansi.me/api`
+- **Service**: GraphQLZero (free testing API)
+- **No authentication required**
+- **Query defined in**: `src/constants/api.js`
+
+## 🎨 Component Architecture
+
+### Component Hierarchy
+
+```
+App
+└─> HomeScreen
+    ├─> Header
+    ├─> FlatList
+    │   └─> PostCard (for each post)
+    ├─> EmptyState (when no posts)
+    ├─> NotificationButton (fixed bottom)
+    ├─> DraggableBot (floating)
+    └─> ChatModal (conditional)
+        ├─> Header
+        ├─> ScrollView
+        │   └─> Message items (user/bot)
+        └─> Input area
+```
+
+### Key Components
+
+1. **PostCard**: Displays individual post with user info
+2. **EmptyState**: Shows loading spinner, error, or empty message
+3. **DraggableBot**: Circular draggable button for chat access
+4. **ChatModal**: Full-screen modal with chat interface
+5. **NotificationButton**: Fixed button at bottom for test notifications
+
+## 📱 State Management
+
+### HomeScreen State
+
+```javascript
+- posts: Array          // Posts from API
+- loading: Boolean      // Loading state
+- error: String         // Error message
+- refreshing: Boolean   // Pull-to-refresh state
+- chatModalVisible: Boolean  // Chat modal visibility
+- notifications: Array  // Received notifications
+- expoPushToken: String // Push notification token
+```
+
+### ChatModal State
+
+```javascript
+- messages: Array       // Chat messages (user + bot)
+- inputText: String     // Current input text
+- loading: Boolean      // Waiting for API response
+```
+
+## 🔄 Data Flow
+
+### Posts Data Flow
+
+```
+GraphQLZero API
+    │
+    ▼
+services/api.js (fetchPosts)
+    │
+    ▼
+HomeScreen (loadPosts)
+    │
+    ▼
+State: posts
+    │
+    ▼
+FlatList → PostCard (renders)
+```
+
+### Chat Data Flow
+
+```
+User Input
+    │
+    ▼
+ChatModal (handleSend)
+    │
+    ├─> Add user message to state
+    │
+    └─> services/geminiService.js (sendMessageToGemini)
+        │
+        ├─> Build conversation context
+        │
+        └─> Gemini API
+            │
+            ▼
+        Response text
+            │
+            ▼
+        Add bot message to state
+            │
+            ▼
+        services/chatStorage.js (saveChatHistory)
+            │
+            ▼
+        AsyncStorage (persisted)
+```
+
+## 🐛 Troubleshooting
+
+### Chat Not Working?
+
+1. **Check API Key**: Ensure Gemini API key is set in `src/constants/gemini.js`
+2. **Check API Key Format**: Should be just the key, not the full URL
+3. **Network**: Ensure device has internet connection
+4. **Console Errors**: Check Metro bundler console for API errors
+
+### Bot Not Draggable?
+
+1. **Gesture Handler**: Ensure `react-native-gesture-handler` is installed
+2. **Import**: Check that `index.js` imports gesture handler at the top
+3. **Rebuild**: If using dev client, rebuild after installing package
+
+### Posts Not Loading?
+
+1. **Network**: Check internet connection
+2. **API Endpoint**: Verify GraphQLZero API is accessible
+3. **Console**: Check for GraphQL errors in console
+
+### Chat History Not Persisting?
+
+1. **AsyncStorage**: Ensure `@react-native-async-storage/async-storage` is installed
+2. **Permissions**: Check app has storage permissions
+3. **Storage Key**: Verify storage key is consistent (`@techvib_chat_history`)
+
+## 📝 Scripts
 
 ```bash
+# Development
+npm start                 # Start dev server
+npm run android          # Start with Android
+npm run ios              # Start with iOS
+
+# Build Development Client
+npm run build:dev:android
+npm run build:dev:ios
+
+# Build Production
 npm run build:prod:android
 npm run build:prod:ios
 ```
 
-## Sending Notifications
+## 🔗 Resources
 
-### Using Expo Push Notification Service
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Native Documentation](https://reactnative.dev/)
+- [Gemini API Documentation](https://ai.google.dev/docs)
+- [GraphQLZero API](https://graphqlzero.almansi.me/)
+- [AsyncStorage Documentation](https://react-native-async-storage.github.io/async-storage/)
 
-The app displays an Expo Push Token when running. You can send notifications using:
-
-1. **Expo Push Notification Tool**: https://expo.dev/notifications
-2. **cURL command**:
-
-```bash
-curl -H "Content-Type: application/json" \
-  -X POST https://exp.host/--/api/v2/push/send \
-  -d '{
-    "to": "YOUR_EXPO_PUSH_TOKEN",
-    "title": "Test Notification",
-    "body": "This is a test notification!",
-    "data": { "testData": "Hello from FCM!" }
-  }'
-```
-
-### Using FCM Directly
-
-For Android, you can send notifications via FCM using the Server Key:
-
-```bash
-curl -X POST https://fcm.googleapis.com/fcm/send \
-  -H "Authorization: key=YOUR_FCM_SERVER_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "YOUR_FCM_TOKEN",
-    "notification": {
-      "title": "Test Notification",
-      "body": "This is a test notification from FCM!"
-    },
-    "data": {
-      "testData": "Hello from FCM!"
-    }
-  }'
-```
-
-**Note**: In Expo managed workflow with dev client, FCM tokens are handled through Expo's push notification service. The dev build includes the necessary native code for FCM integration.
-
-## Project Structure
-
-```
-techVib/
-├── App.js                    # Main app component with notification UI
-├── notificationService.js    # Notification service functions
-├── app.json                  # Expo configuration
-├── eas.json                  # EAS Build configuration
-├── google-services.json      # Firebase configuration (add this file)
-└── README.md                 # This file
-```
-
-## How It Works
-
-1. **Development Build**: Custom native client with FCM support
-2. **Permission Request**: The app requests notification permissions on launch
-3. **Token Generation**: Expo Push Token is generated and displayed
-4. **Notification Listeners**:
-   - Listens for notifications received while app is in foreground
-   - Listens for user taps on notifications
-5. **Notification Display**: All received notifications are displayed in a scrollable list
-6. **Test Notifications**: You can send test notifications using the button
-
-## Troubleshooting
-
-### Notifications not working?
-
-1. **Use Dev Client**: Make sure you're using the development build, NOT Expo Go
-2. **Check permissions**: Make sure notification permissions are granted
-3. **Physical device**: Push notifications only work on physical devices, not simulators
-4. **google-services.json**: Make sure the file is in the root directory
-5. **Rebuild after changes**: If you change native config, rebuild the dev client
-
-### FCM not working on Android?
-
-1. Ensure `google-services.json` is in the root directory
-2. Rebuild the development client after adding the file
-3. Check that your package name matches in Firebase Console and app.json (`com.techvib.app`)
-4. Make sure you're using the development build, not Expo Go
-
-### Build errors?
-
-1. **EAS Project ID**: Make sure you've run `eas build:configure` to set up your project
-2. **Firebase setup**: Ensure `google-services.json` is valid and matches your Firebase project
-3. **Package name**: Verify package name consistency across Firebase and app.json
-
-### "Must use physical device" error?
-
-- Push notifications don't work on simulators/emulators
-- Use a real Android/iOS device for testing
-
-## Development Workflow
-
-1. **Initial Setup** (one time):
-
-   - `eas login`
-   - `eas build:configure`
-   - Add `google-services.json`
-   - Build dev client: `npm run build:dev:android`
-   - Install dev client on device
-
-2. **Daily Development**:
-
-   - `npm start` (starts dev server)
-   - Open dev client app on device
-   - Scan QR code or enter URL
-   - Make code changes and see them hot reload
-
-3. **After Native Changes**:
-   - If you modify `app.json` plugins or native config
-   - Rebuild dev client: `npm run build:dev:android`
-   - Reinstall updated dev client
-
-## Next Steps
-
-1. ✅ Add your `google-services.json` file from Firebase
-2. ✅ Build and install development client
-3. ✅ Test notifications using the test button in the app
-4. ✅ Set up a backend server to send notifications via FCM
-5. ✅ Customize notification appearance and behavior
-6. ✅ Add notification categories and actions
-
-## Resources
-
-- [Expo Dev Client Documentation](https://docs.expo.dev/development/introduction/)
-- [Expo Notifications Documentation](https://docs.expo.dev/versions/latest/sdk/notifications/)
-- [EAS Build Documentation](https://docs.expo.dev/build/introduction/)
-- [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging)
-
-## License
+## 📄 License
 
 This project is open source and available under the MIT License.
+
+---
+
+**Note**: Remember to keep your Gemini API key secure and never commit it to version control. Consider using environment variables for production builds.

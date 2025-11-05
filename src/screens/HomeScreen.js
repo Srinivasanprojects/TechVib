@@ -21,6 +21,8 @@ import {
 import PostCard from "../components/PostCard";
 import EmptyState from "../components/EmptyState";
 import NotificationButton from "../components/NotificationButton";
+import DraggableBot from "../components/DraggableBot";
+import ChatModal from "../components/ChatModal";
 import { Colors } from "../constants/colors";
 
 const HomeScreen = () => {
@@ -30,6 +32,7 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [chatModalVisible, setChatModalVisible] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
 
@@ -158,6 +161,12 @@ const HomeScreen = () => {
       />
 
       <NotificationButton onPress={handleSendTestNotification} />
+
+      <DraggableBot onPress={() => setChatModalVisible(true)} />
+      <ChatModal
+        visible={chatModalVisible}
+        onClose={() => setChatModalVisible(false)}
+      />
     </View>
   );
 };
