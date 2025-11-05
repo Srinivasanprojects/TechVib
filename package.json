@@ -1,0 +1,28 @@
+{
+  "name": "techvib",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo start --dev-client --android",
+    "ios": "expo start --dev-client --ios",
+    "web": "expo start --web",
+    "build:dev:android": "eas build --profile development --platform android",
+    "build:dev:ios": "eas build --profile development --platform ios",
+    "build:preview:android": "eas build --profile preview --platform android",
+    "build:preview:ios": "eas build --profile preview --platform ios",
+    "build:prod:android": "eas build --profile production --platform android",
+    "build:prod:ios": "eas build --profile production --platform ios"
+  },
+  "dependencies": {
+    "expo": "~54.0.22",
+    "expo-constants": "~18.0.10",
+    "expo-dev-client": "~6.0.17",
+    "expo-device": "~8.0.9",
+    "expo-notifications": "~0.32.12",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "private": true
+}
